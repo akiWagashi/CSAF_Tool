@@ -4,12 +4,12 @@ using System.Collections.ObjectModel;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace CSAF_Tool.CASFArchive;
+namespace CSAF_Tool.CSAFArchive;
 public static class Csaf
 {
     public static readonly byte[] HeaderSignarture = { 0x43, 0x53, 0x41, 0x46 };
 
-    private static readonly byte[] DefultKey = { 0x60, 0x21, 0x7D, 0xC6, 0x5E, 0x7B, 0x5D, 0x67, 0xA6, 0x51, 0xEA, 0x9B, 0x30, 0x54, 0xEA, 0x36,
+    private static readonly byte[] DefaultKey = { 0x60, 0x21, 0x7D, 0xC6, 0x5E, 0x7B, 0x5D, 0x67, 0xA6, 0x51, 0xEA, 0x9B, 0x30, 0x54, 0xEA, 0x36,
                                                   0x0C, 0xD5, 0x62, 0x6E, 0xFA, 0xB8, 0x68, 0x6C, 0xD5, 0x87, 0xE7, 0x7B, 0x9C, 0xA3, 0x92, 0x40  };
 
     private static readonly byte[] AesIV = { 0x46, 0x61, 0x6D, 0x69, 0x6C, 0x79, 0x41, 0x64, 0x76, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6D, 0x20 };
@@ -124,14 +124,14 @@ public static class Csaf
 
         #region init aes key
 
-        Span<byte> defaultKeyView = DefultKey.AsSpan(0, 0x10);
+        Span<byte> defaultKeyView = DefaultKey.AsSpan(0, 0x10);
         Span<byte> aesKeyView = aesKey.AsSpan(0, 0x10);
 
         for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(rolShiftLength);
 
         MD5.HashData(aesKeyView).CopyTo(aesKeyView);
 
-        defaultKeyView = DefultKey.AsSpan(0x10, 0x10);
+        defaultKeyView = DefaultKey.AsSpan(0x10, 0x10);
         aesKeyView = aesKey.AsSpan(0x10, 0x10);
 
         for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(rolShiftLength);
