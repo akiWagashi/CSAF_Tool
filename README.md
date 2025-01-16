@@ -1,9 +1,9 @@
 # CSAF_Tool
 
 the tool hope extract resource from CSAF archive(singature : 0x43 0x53 0x41 0x46)  
-i don't know how address the engine and i can't guarantee key is same at all games
+i don't know how address the engine and i can't guarantee decrypt key(and aes IV) is same at all games
 
-tested with : Nanairo * Clip ~Saigo no Stage~
+tested with : Nanairo * Clip \~Saigo no Stage\~
 
 ## Usage
 
