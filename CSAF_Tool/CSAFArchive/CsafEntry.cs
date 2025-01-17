@@ -1,6 +1,6 @@
 ﻿
 
-namespace CSAF_Tool.CASFArchive;
+namespace CSAF_Tool.CSAFArchive;
 internal class CsafEntry
 {
     public string Name = string.Empty;

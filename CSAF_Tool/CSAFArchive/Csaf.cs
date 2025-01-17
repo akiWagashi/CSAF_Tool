@@ -90,6 +90,7 @@ public static class Csaf
                 using (FileStream fileStream = File.Create(createFileName))
                 {
                     fileStream.Write(data, 0, entry.Size);
+                    fileStream.Flush();
                 }
 
                 Interlocked.Increment(ref extractCount);
@@ -120,21 +121,20 @@ public static class Csaf
     {
         byte[] aesKey = new byte[0x20];
         int startIndex = (dataOffset >> 3) % 0x10;
-        int rolShiftLength = dataOffset % 8;
 
         #region init aes key
 
         Span<byte> defaultKeyView = DefaultKey.AsSpan(0, 0x10);
         Span<byte> aesKeyView = aesKey.AsSpan(0, 0x10);
 
-        for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(rolShiftLength);
+        for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
 
         MD5.HashData(aesKeyView).CopyTo(aesKeyView);
 
         defaultKeyView = DefaultKey.AsSpan(0x10, 0x10);
         aesKeyView = aesKey.AsSpan(0x10, 0x10);
 
-        for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(rolShiftLength);
+        for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
 
         MD5.HashData(aesKeyView).CopyTo(aesKeyView);
 

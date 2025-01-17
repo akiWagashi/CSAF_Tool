@@ -6,6 +6,7 @@ internal static class Extension
 {
     public static byte RotateLeft(this byte x, int n)
     {
+        n %= 8;
         return (byte)((x << n) | (x >> (8 - n)));
     }
 
