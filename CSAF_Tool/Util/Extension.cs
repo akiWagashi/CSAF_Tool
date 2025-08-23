@@ -17,9 +17,9 @@ internal static class Extension
         return ((x / multiple) + 1) * multiple;
     }
 
-    public static int GetCStyleStringLength(this ReadOnlySpan<byte> buufer, int startIndex = 0)
+    public static int GetCStyleStringLength(this ReadOnlySpan<byte> buffer, int startIndex = 0)
     {
-        var index = MemoryMarshal.Cast<byte, UInt16>(buufer.Slice(startIndex)).IndexOf((ushort)0);
+        var index = MemoryMarshal.Cast<byte, UInt16>(buffer.Slice(startIndex)).IndexOf((ushort)0);
 
         return index == -1 ? -1 : index * 2;
     }

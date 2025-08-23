@@ -9,8 +9,11 @@ public static class Csaf
 {
     public static readonly byte[] HeaderSignarture = { 0x43, 0x53, 0x41, 0x46 };
 
-    private static readonly byte[] DefaultKey = { 0x60, 0x21, 0x7D, 0xC6, 0x5E, 0x7B, 0x5D, 0x67, 0xA6, 0x51, 0xEA, 0x9B, 0x30, 0x54, 0xEA, 0x36,
-                                                  0x0C, 0xD5, 0x62, 0x6E, 0xFA, 0xB8, 0x68, 0x6C, 0xD5, 0x87, 0xE7, 0x7B, 0x9C, 0xA3, 0x92, 0x40  };
+    //private static readonly byte[] DefaultKey = { 0x60, 0x21, 0x7D, 0xC6, 0x5E, 0x7B, 0x5D, 0x67, 0xA6, 0x51, 0xEA, 0x9B, 0x30, 0x54, 0xEA, 0x36,
+    //                                              0x0C, 0xD5, 0x62, 0x6E, 0xFA, 0xB8, 0x68, 0x6C, 0xD5, 0x87, 0xE7, 0x7B, 0x9C, 0xA3, 0x92, 0x40  };
+
+    private static readonly byte[] DefaultKey = { 0xF5, 0x96, 0x4B, 0x37, 0xA6, 0x80, 0x10, 0x53, 0x2B, 0x6A, 0x1A, 0x8D, 0x1A, 0xA3, 0x07, 0x73,
+                                                  0x3A, 0x25, 0x61, 0x37, 0xE4, 0x52, 0x8F, 0xE5, 0x2F, 0x32, 0xD2, 0xA2, 0x05, 0x58, 0x5A, 0x27 }; //夏幻の恋
 
     private static readonly byte[] AesIV = { 0x46, 0x61, 0x6D, 0x69, 0x6C, 0x79, 0x41, 0x64, 0x76, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6D, 0x20 };
 
@@ -49,7 +52,10 @@ public static class Csaf
 
         var entryNameSection = catalogBuffer.AsSpan((int)infoSectionSize);
 
-        if (casfFlag.HasFlag(CsafFlag.FileNameEncrypt)) DecryptData(entryNameSection, 0).CopyTo(entryNameSection);
+        if (casfFlag.HasFlag(CsafFlag.DataEncrypt)) 
+        {
+            DecryptData(entryNameSection, 0).CopyTo(entryNameSection);
+        } 
 
         var entries = ParseCatalog(infoSection, entryNameSection, (int)entryCount); //parse info to entry
 
@@ -75,10 +81,13 @@ public static class Csaf
             var task = Task.Run(() =>
             {
 
-                for (int i = 0; i < chunkCount; i++)
+                if (casfFlag.HasFlag(CsafFlag.DataEncrypt)) 
                 {
-                    DecryptData(data.AsSpan(i * chunkSize, chunkSize), chunkIndex + i).CopyTo(data, i * chunkSize);   //decrypt resource data , maximum of 0x1000 bytes at each time
-                }
+                    for (int i = 0; i < chunkCount; i++)
+                    {
+                        DecryptData(data.AsSpan(i * chunkSize, chunkSize), chunkIndex + i).CopyTo(data, i * chunkSize);   //decrypt resource data , maximum of 0x1000 bytes at each time
+                    }
+                } 
 
                 string createFileName = Path.Combine(outputPath, entry.Name);
 
