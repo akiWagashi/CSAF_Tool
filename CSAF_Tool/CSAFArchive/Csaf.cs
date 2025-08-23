@@ -15,12 +15,13 @@ public static class Csaf
     private static readonly byte[] DefaultKey = { 0xF5, 0x96, 0x4B, 0x37, 0xA6, 0x80, 0x10, 0x53, 0x2B, 0x6A, 0x1A, 0x8D, 0x1A, 0xA3, 0x07, 0x73,
                                                   0x3A, 0x25, 0x61, 0x37, 0xE4, 0x52, 0x8F, 0xE5, 0x2F, 0x32, 0xD2, 0xA2, 0x05, 0x58, 0x5A, 0x27 }; //夏幻の恋
 
-    private static readonly byte[] AesIV = { 0x46, 0x61, 0x6D, 0x69, 0x6C, 0x79, 0x41, 0x64, 0x76, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6D, 0x20 };
+    private static readonly byte[] AesIV = { 0x46, 0x61, 0x6D, 0x69, 0x6C, 0x79, 0x41, 0x64, 0x76, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6D, 0x20 };  //FamilyAdvSystem
 
     public static void ExtractResource(string sourceArchive, string outputPath)
     {
+        using FileStream fileStream = File.OpenRead(sourceArchive);
 
-        using BinaryReader sourceReader = new BinaryReader(File.OpenRead(sourceArchive));
+        using BinaryReader sourceReader = new BinaryReader(fileStream);
 
         ExtractResource(sourceReader, outputPath);
 
@@ -133,19 +134,29 @@ public static class Csaf
 
         #region init aes key
 
+        var md5 = new IncrementalMD5();
+
         Span<byte> defaultKeyView = DefaultKey.AsSpan(0, 0x10);
         Span<byte> aesKeyView = aesKey.AsSpan(0, 0x10);
 
-        for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
+        for (int i = 0; i < 0x10; i++) 
+        {
+            aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
+        } 
 
-        MD5.HashData(aesKeyView).CopyTo(aesKeyView);
+        md5.Update(aesKeyView);
+        md5.FinalHash().CopyTo(aesKeyView);
 
         defaultKeyView = DefaultKey.AsSpan(0x10, 0x10);
         aesKeyView = aesKey.AsSpan(0x10, 0x10);
 
-        for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
+        for (int i = 0; i < 0x10; i++) 
+        {
+            aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
+        }
 
-        MD5.HashData(aesKeyView).CopyTo(aesKeyView);
+        md5.Update(aesKeyView);
+        md5.FinalHash().CopyTo(aesKeyView);
 
         #endregion
 

@@ -12,7 +12,8 @@ internal static class Extension
 
     public static int NumberPadding(this int x, int multiple)
     {
-        if (x % multiple == 0) return x;
+        if (x % multiple == 0) 
+            return x;
 
         return ((x / multiple) + 1) * multiple;
     }
