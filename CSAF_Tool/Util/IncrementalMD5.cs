@@ -1,5 +1,6 @@
 
 using System.Buffers.Binary;
+using System.Collections.Immutable;
 using System.Numerics;
 
 namespace CSAF_Tool.Util;
@@ -7,7 +8,7 @@ public class IncrementalMD5
 {
 	public const int BlockSize = 64;
 
-	private static readonly IReadOnlyList<IReadOnlyList<uint>> S =
+	private static readonly ImmutableArray<ImmutableArray<uint>> S =
 	[
 	   [7, 12, 17, 22],
 	   [5, 9, 14, 20],
@@ -15,7 +16,7 @@ public class IncrementalMD5
 	   [6, 10, 15, 21]
 	];
 
-	private static readonly IReadOnlyList<uint> T =
+	private static readonly ImmutableArray<uint> T =
 	[
 		0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
 		0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
@@ -38,7 +39,7 @@ public class IncrementalMD5
 		0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391
 	];
 
-	private static readonly IReadOnlyList<byte> Padding = 
+	private static readonly ImmutableArray<byte> Padding = 
 	[ 
 	  0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 	  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
@@ -46,7 +47,7 @@ public class IncrementalMD5
 	  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 	];
 
-	public static readonly IReadOnlyList<uint> DefaultState = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476];
+	public static readonly ImmutableArray<uint> DefaultState = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476];
 
 	public uint[] State { get; private set; } = DefaultState.ToArray();
 
