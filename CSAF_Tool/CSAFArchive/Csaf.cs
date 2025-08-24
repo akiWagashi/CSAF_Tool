@@ -1,5 +1,6 @@
 ﻿
 using CSAF_Tool.Util;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,17 +8,21 @@ using System.Text;
 namespace CSAF_Tool.CSAFArchive;
 public static class Csaf
 {
-    public static readonly byte[] HeaderSignarture = { 0x43, 0x53, 0x41, 0x46 };
+    public static readonly ImmutableArray<byte> HeaderSignarture = [ 0x43, 0x53, 0x41, 0x46 ];
 
-    private static readonly byte[] DefaultKey = { 0x60, 0x21, 0x7D, 0xC6, 0x5E, 0x7B, 0x5D, 0x67, 0xA6, 0x51, 0xEA, 0x9B, 0x30, 0x54, 0xEA, 0x36,
-                                                  0x0C, 0xD5, 0x62, 0x6E, 0xFA, 0xB8, 0x68, 0x6C, 0xD5, 0x87, 0xE7, 0x7B, 0x9C, 0xA3, 0x92, 0x40  };
+    private static readonly ImmutableArray<byte> DefaultKey = 
+        [
+         0x60, 0x21, 0x7D, 0xC6, 0x5E, 0x7B, 0x5D, 0x67, 0xA6, 0x51, 0xEA, 0x9B, 0x30, 0x54, 0xEA, 0x36,
+         0x0C, 0xD5, 0x62, 0x6E, 0xFA, 0xB8, 0x68, 0x6C, 0xD5, 0x87, 0xE7, 0x7B, 0x9C, 0xA3, 0x92, 0x40 
+        ];    //招子
 
-    private static readonly byte[] AesIV = { 0x46, 0x61, 0x6D, 0x69, 0x6C, 0x79, 0x41, 0x64, 0x76, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6D, 0x20 };
+    private static readonly ImmutableArray<byte> AesIV = [ 0x46, 0x61, 0x6D, 0x69, 0x6C, 0x79, 0x41, 0x64, 0x76, 0x53, 0x79, 0x73, 0x74, 0x65, 0x6D, 0x20 ]; //FamilyAdvSystem
 
     public static void ExtractResource(string sourceArchive, string outputPath)
     {
+        using FileStream fileStream = File.OpenRead(sourceArchive);
 
-        using BinaryReader sourceReader = new BinaryReader(File.OpenRead(sourceArchive));
+        using BinaryReader sourceReader = new BinaryReader(fileStream);
 
         ExtractResource(sourceReader, outputPath);
 
@@ -27,11 +32,13 @@ public static class Csaf
     {
         var header = sourceReader.ReadBytes(HeaderSignarture.Length);
 
-        if (!HeaderSignarture.SequenceEqual(header)) throw new Exception("File format mismatch");
+        if (!HeaderSignarture.SequenceEqual(header)) 
+            throw new Exception("File format mismatch");
 
         CsafFlag casfFlag = (CsafFlag)sourceReader.ReadUInt32();
 
-        if (!casfFlag.HasFlag(CsafFlag.ArchiveEnable)) throw new Exception("The archive is disable");
+        if (!casfFlag.HasFlag(CsafFlag.ArchiveEnable)) 
+            throw new Exception("The archive is disable");
 
         var entryCount = sourceReader.ReadUInt32(); //maybe
 
@@ -49,7 +56,10 @@ public static class Csaf
 
         var entryNameSection = catalogBuffer.AsSpan((int)infoSectionSize);
 
-        if (casfFlag.HasFlag(CsafFlag.FileNameEncrypt)) DecryptData(entryNameSection, 0).CopyTo(entryNameSection);
+        if (casfFlag.HasFlag(CsafFlag.DataEncrypt)) 
+        {
+            DecryptData(entryNameSection, 0).CopyTo(entryNameSection);
+        } 
 
         var entries = ParseCatalog(infoSection, entryNameSection, (int)entryCount); //parse info to entry
 
@@ -75,16 +85,20 @@ public static class Csaf
             var task = Task.Run(() =>
             {
 
-                for (int i = 0; i < chunkCount; i++)
+                if (casfFlag.HasFlag(CsafFlag.DataEncrypt))
                 {
-                    DecryptData(data.AsSpan(i * chunkSize, chunkSize), chunkIndex + i).CopyTo(data, i * chunkSize);   //decrypt resource data , maximum of 0x1000 bytes at each time
+                    for (int i = 0; i < chunkCount; i++)
+                    {
+                        DecryptData(data.AsSpan(i * chunkSize, chunkSize), chunkIndex + i).CopyTo(data, i * chunkSize);   //decrypt resource data , maximum of 0x1000 bytes at each time
+                    }
                 }
 
                 string createFileName = Path.Combine(outputPath, entry.Name);
 
                 string directoryName = Path.GetDirectoryName(createFileName) ?? throw new Exception("Path.GetDirectoryName return null");
 
-                if (!Directory.Exists(directoryName)) Directory.CreateDirectory(directoryName);
+                if (!Directory.Exists(directoryName)) 
+                    Directory.CreateDirectory(directoryName);
 
 
                 using (FileStream fileStream = File.Create(createFileName))
@@ -117,14 +131,14 @@ public static class Csaf
 
     }
 
-    private static byte[] DecryptData(Span<byte> encryptedData, int dataOffset)
+    private static byte[] DecryptData(ReadOnlySpan<byte> encryptedData, int dataOffset)
     {
         byte[] aesKey = new byte[0x20];
         int startIndex = (dataOffset >> 3) % 0x10;
 
         #region init aes key
 
-        Span<byte> defaultKeyView = DefaultKey.AsSpan(0, 0x10);
+        ReadOnlySpan<byte> defaultKeyView = DefaultKey.AsSpan(0, 0x10);
         Span<byte> aesKeyView = aesKey.AsSpan(0, 0x10);
 
         for (int i = 0; i < 0x10; i++) aesKeyView[i] = defaultKeyView[(startIndex + i) % 0x10].RotateLeft(dataOffset);
@@ -146,7 +160,7 @@ public static class Csaf
 
         aesDecrpytor.Key = aesKey;
 
-        return aesDecrpytor.DecryptCbc(encryptedData, AesIV, PaddingMode.Zeros);
+        return aesDecrpytor.DecryptCbc(encryptedData, AesIV.AsSpan(), PaddingMode.Zeros);
 
     }
 
